@@ -11,6 +11,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
+# perform random walk with uniform distribution applied on relations
 def random_walk_uni(G, start_nodes, restart_prob=0.15, target_edge_count=1_000):
     
     start_nodes_in_graph = [node for node in start_nodes if node in G]
@@ -19,8 +20,8 @@ def random_walk_uni(G, start_nodes, restart_prob=0.15, target_edge_count=1_000):
     if not start_nodes_in_graph:
         raise ValueError("No valid start nodes found in the graph.")
     
-    current_node = random.choice(start_nodes_in_graph)  # Start from a random valid disease/gene node
-    sampled_edges = set()  # To store the sampled edges
+    current_node = random.choice(start_nodes_in_graph) 
+    sampled_edges = set()  
     sampled_nodes = set([current_node])  # To store the sampled nodes
 
     edge_relation_map = nx.get_edge_attributes(G, 'relation')
@@ -57,6 +58,7 @@ def random_walk_uni(G, start_nodes, restart_prob=0.15, target_edge_count=1_000):
     
     return sampled_edges
 
+# record graph stats
 def get_graph_attributes(G_sub, df):
     results = {}
 
@@ -91,97 +93,6 @@ def get_graph_attributes(G_sub, df):
 
     return results
 
-# def main(args):
-#     df = pd.read_csv('/data/home/yyma/KGC-project/CM-BKG/data/raw/extracted_data_entity_text_yz.csv')
-#     tri_path = '/data/home/yyma/KGC-project/CM-BKG/data/remove_assay/train.csv'
-#     tri_df = pd.read_csv(tri_path)
-
-#     id2type = defaultdict()
-#     # create a node-to-type mapping dict
-#     for index,row in tqdm(df.iterrows(), total=len(df)):
-#         row_dict = row.to_dict()
-#         id2type[str(int(row_dict['_id']))] = row_dict['_labels'][1:]
-
-#     # filter the edges to 30 relation types
-#     if args.clean_rels:
-#         tri_rels = tri_df['_type'].value_counts()
-#         top30_types = tri_rels.nlargest(30).index
-#         filtered_df = tri_df[tri_df['_type'].isin(top30_types)]
-#         filtered_df['_start'] = filtered_df['_start'].apply(lambda x: str(int(x)))
-#         filtered_df['_end'] = filtered_df['_end'].apply(lambda x: str(int(x)))
-#     else:
-#         filtered_df = tri_df
-#         filtered_df['_start'] = filtered_df['_start'].apply(lambda x: str(int(x)))
-#         filtered_df['_end'] = filtered_df['_end'].apply(lambda x: str(int(x)))
-
-#     # construct the graph
-#     print(f"Constructing the knowledge graph as networkx object..")
-#     G = nx.DiGraph()
-#     for _, row in tqdm(filtered_df.iterrows(), total=len(filtered_df)):
-#         G.add_edge(row['_start'], row['_end'], relation=row['_type'])
-
-#     print(f"Graph construction finished, starting to get graph attributes. ")
-#     all_results = []
-#     graph_attributes = get_graph_attributes(G, filtered_df)
-#     graph_attributes['start_size'] = 0
-#     graph_attributes['sample_ratio'] = 0
-#     all_results.append(graph_attributes)
-
-#     # intialize the starting nodes    
-#     start_nodes = [k for k,v in id2type.items() if v in args.target_types and k in G]
-    
-#     print(f"The size of start nodes is {len(start_nodes)}")
-#     if isinstance(args.start_size, list):
-#         for start_size in args.start_size:
-#             sampled_start_nodes = random.sample(start_nodes, start_size)
-    
-#             sample_size = int(len(filtered_df) * args.sample_ratio)
-#             print(f"Starting random walk, target edge size is {sample_size}")
-
-#             sampled_edges = random_walk_uni(G, sampled_start_nodes, target_edge_count=sample_size)
-
-#             sampled_results = []
-#             for _, row in filtered_df.iterrows():
-#                 if (row['_start'], row['_end']) in sampled_edges:
-#                     sampled_results.append(row)
-
-#             sampled_df = pd.DataFrame(sampled_results)
-
-#             G_sub = nx.DiGraph()
-#             for _, row in sampled_df.iterrows():
-#                 G_sub.add_edge(row['_start'], row['_end'], relation=row['_type'])
-
-#             # Get graph attributes and add experiment-specific info (start_size and sample_ratio)
-#             graph_attributes = get_graph_attributes(G_sub, sampled_df)
-#             graph_attributes['start_size'] = start_size
-#             graph_attributes['sample_ratio'] = args.sample_ratio
-
-#             # Append the result to all_results
-#             all_results.append(graph_attributes)
-
-#         if args.save_to_csv:
-#             output_df = pd.DataFrame(all_results)
-#             output_df.to_csv(args.out_stat_path, index=False)
-#             print(f"Results saved to {args.out_stat_path}")
-#     else:
-#         sampled_start_nodes = random.sample(start_nodes, args.start_size)
-#         sample_size = int(len(filtered_df) * args.sample_ratio)
-#         print(f"Starting random walk, target edge size is {sample_size}")
-
-#         sampled_edges = random_walk_uni(G, sampled_start_nodes, target_edge_count=sample_size)
-
-#         sampled_results = []
-#         for _, row in filtered_df.iterrows():
-#             if (row['_start'], row['_end']) in sampled_edges:
-#                 sampled_results.append(row)
-
-#         sampled_df = pd.DataFrame(sampled_results)
-#         subgraph_edges = sampled_df[['_start', '_type', '_end']]
-#         print(f'Saving sampled edges to {args.out_path}')
-
-#         # Save to CSV (without index)
-#         subgraph_edges.to_csv(args.out_path, index=False, header=False, sep='\t')
-
 def main(args):
     df = pd.read_csv('/dataStor/home/yyma/KGC-project/CM-BKG/data/raw/extracted_data_entity_text_yz.csv')
     
@@ -195,7 +106,7 @@ def main(args):
         row_dict = row.to_dict()
         id2type[str(int(row_dict['_id']))] = row_dict['_labels'][1:]
 
-    # filter the edges to 30 relation types
+    # filter the edges to 30 relation types defiend by parsed arguemnts
     if args.clean_rels:
         tri_rels = tri_df['_type'].value_counts()
         top30_types = tri_rels.nlargest(args.rel_num).index
@@ -286,13 +197,16 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--clean_rels', default=False, help="Whether to filter out the most frequent rels.")
+    parser.add_argument('--clean_rels', default=False, help="Whether to filter out the infrequent rels.")
     parser.add_argument('--keep_target_rels', default=False)
     parser.add_argument('--rel_num', default=30)
     # parser.add_argument('--target_types', default=['Chemical:Compound', 'Disease'], help="The starting node types.")
-    parser.add_argument('--target_types', default=None, help="The starting node types.")
-    parser.add_argument('--target_rels', default=['TREATS_CHtD', 'INDUCES_CHiD'], help="The target relation that are all kept.")
-    parser.add_argument('--start_size', default=[2000, 3000, 4000, 5000, 6000, 8000, 10000, 20000, 30000, 40000, 50000])
+    parser.add_argument('--target_types', default=None, 
+                        help="The starting node types.")
+    parser.add_argument('--target_rels', default=['TREATS_CHtD', 'INDUCES_CHiD'], 
+                        help="The target relation is kept as a whole.")
+    parser.add_argument('--start_size', default=[2000, 3000, 4000, 5000, 6000, 8000, 10000, 20000, 30000, 40000, 50000], 
+                        help="If its an integer, random-walk parition is performed; If its a list of integers, then we only gather stats.")
     # parser.add_argument('--start_size', default=[1000,2000,4000,6000,8000])
     # 1000 for target identification, 2000 for drug repo
     # parser.add_argument('--start_size', default=2000)
